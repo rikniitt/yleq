@@ -88,7 +88,7 @@ def show(n):
     cursor = db.cursor()
 
     sql = """
-            SELECT * FROM yle_dl_queue
+            SELECT id, url, destdir, created_at FROM yle_dl_queue
              WHERE status = 'queued'
              ORDER BY created_at ASC
           """
@@ -98,9 +98,9 @@ def show(n):
     log(sql, "DEBUG")
 
     result = cursor.execute(sql)
-    rows = [row[0:-1] for row in result]
+    rows = [row for row in result]
 
-    print tabulate(rows, headers=["#", "url", "status", "destdir", "created at"])
+    print tabulate(rows, headers=["#", "url", "destdir", "created at"])
 
 
 @yleq.command("enqueue")
@@ -204,6 +204,29 @@ def dequeue(n, d):
             break
 
     log("done")
+
+
+@yleq.command("failed")
+@click.option("--n", type=click.INT, default=-1)
+def failed(n):
+    """show the latest failed"""
+    db = db_connect()
+    cursor = db.cursor()
+
+    sql = """
+            SELECT id, url, destdir, handled_at FROM yle_dl_queue
+             WHERE status = 'failed'
+             ORDER BY handled_at DESC
+          """
+    if n > 0:
+        sql += "   LIMIT " + str(n)
+
+    log(sql, "DEBUG")
+
+    result = cursor.execute(sql)
+    rows = [row for row in result]
+
+    print tabulate(rows, headers=["#", "url", "destdir", "handled at"])
 
 
 if __name__ == "__main__":
