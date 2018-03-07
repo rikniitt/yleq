@@ -29,7 +29,7 @@ def setup_logging():
     filehandler.setLevel(logging.DEBUG)
     filehandler.setFormatter(logging.Formatter(
         "[%(asctime)s] %(levelname)s: %(message)s",
-        datefmt='%Y-%d-%m %H:%M:%S'
+        datefmt="%Y-%d-%m %H:%M:%S"
     ))
 
     streamhandler = logging.StreamHandler()
@@ -58,7 +58,7 @@ def yleq():
 @yleq.command("db-create")
 def db_create():
     """create needed database tables"""
-    open(DB_FILE, 'a').close()
+    open(DB_FILE, "a").close()
     db = db_connect()
     cursor = db.cursor()
 
@@ -104,7 +104,7 @@ def show(n):
 
 
 @yleq.command("enqueue")
-@click.argument("url", type=click.STRING)
+@click.argument("urls", type=click.STRING, nargs=-1, required=True)
 @click.option(
     "--destdir",
     default=".",
@@ -116,9 +116,9 @@ def show(n):
         resolve_path=True
     )
 )
-def enqueue(url, destdir):
-    """enqueue new download url"""
-    log("Enqueueing " + url)
+def enqueue(urls, destdir):
+    """enqueue new download urls"""
+    log("Enqueuing " + " ".join(urls))
     log(" will be saved to " + destdir)
 
     db = db_connect()
@@ -129,12 +129,14 @@ def enqueue(url, destdir):
              (url, destdir, status, created_at)
              VALUES (?, ?, ?, ?)
           """
-    values = (url, destdir, "queued", datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
 
-    log(sql + " (" + " ".join(values) + ")", "DEBUG")
+    for url in urls:
+        values = (url, destdir, "queued", datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
 
-    cursor.execute(sql, values)
-    db.commit()
+        log(sql + " (" + " ".join(values) + ")", "DEBUG")
+
+        cursor.execute(sql, values)
+        db.commit()
 
 
 @yleq.command("db-console")
